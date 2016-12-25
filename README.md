@@ -3,7 +3,7 @@
 
 ## Introduction
 
-`helm-code-skeleton.el' will be able to use code skeleton through helm interface
+`helm-code-skeleton.el` will be able to use code skeleton through helm interface
 
 
 ## Screenshot
@@ -45,6 +45,7 @@ Maximum number of helm candidates
 (when (require 'helm-code-skeleton nil t)
   (require 'skeleton)
   (setq helm-code-skeleton-dir-path-alist '((php-mode . "$HOME/.emacs.d/elpa/php-mode-*")
+                                            (python-mode . "$HOME/.emacs.d/code-skeleton/python")
                                             (lisp-interaction-mode . "$HOME/.emacs.d/code-skeleton/lisp")))
   (helm-code-skeleton-load))
 ```
