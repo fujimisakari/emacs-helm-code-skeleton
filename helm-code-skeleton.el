@@ -144,9 +144,17 @@ are the string substitutions (see `format')."
     :candidate-number-limit helm-code-skeleton-maximum-candidates
     :action 'helm-code-skeleton--funcall))
 
+;;;###autoload
+(defun helm-code-skeleton-cache-clear ()
+  (interactive)
+  (setq helm-code-skeleton--candidates-cache '()))
+
+;;;###autoload
 (defun helm-code-skeleton-load ()
+  (interactive)
   (unless helm-code-skeleton-dir-path-alist
     (error "Dose not set 'helm-code-skeleton-dir-path-alist'."))
+  (helm-code-skeleton-cache-clear)
   (dolist (mode-alist helm-code-skeleton-dir-path-alist)
     (helm-code-skeleton-log 3 "mode: %s" (car mode-alist))
     (let* ((mode (car mode-alist))
@@ -155,10 +163,8 @@ are the string substitutions (see `format')."
            (file-path-list (cl-remove-if (lambda (s) (string-match helm-code-skeleton-exclude-load-regex s)) file-path-list)))
       (dolist (file-path file-path-list)
         (helm-code-skeleton-log 3 "file-path: %s" file-path)
-        (if (> (length file-path) 0) (load file-path))))))
-
-(defun helm-code-skeleton-cache-clear ()
-  (setq helm-code-skeleton--candidates-cache '()))
+        (if (> (length file-path) 0) (load file-path)))))
+  (message "helm-code-skeleton-load done."))
 
 ;;;###autoload
 (defun helm-code-skeleton-search ()
