@@ -26,7 +26,7 @@ to search code skeleton
 
 ## Customize
 
-#### `helm-code-skeleton-dir-path-alist`(Default: `'()`)
+#### `helm-code-skeleton-dir-root-path`(Default: `nil`)
 
 path of code-mode directory.
 
@@ -44,8 +44,6 @@ Maximum number of helm candidates
 ```lisp
 (when (require 'helm-code-skeleton nil t)
   (require 'skeleton)
-  (setq helm-code-skeleton-dir-path-alist '((php-mode . "$HOME/.emacs.d/elpa/php-mode-*")
-                                            (python-mode . "$HOME/.emacs.d/code-skeleton/python")
-                                            (lisp-interaction-mode . "$HOME/.emacs.d/code-skeleton/lisp")))
+  (setq helm-code-skeleton-dir-root-path "~/.emacs.d/code-skeletons")
   (helm-code-skeleton-load))
 ```

@@ -4,7 +4,7 @@
 
 ;; Author: Ryo Fujimoto <fujimisakri@gmail.com>
 ;; URL: https://github.com/fujimisakari/emacs-helm-code-skeleton
-;; Version: 1.0.0
+;; Version: 1.0.1
 ;; Package-Requires: ((helm "1.5") (emacs "24"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -28,9 +28,8 @@
 ;; To use this package, add these lines to your init.el or .emacs file:
 ;;
 ;;  (when (require 'helm-code-skeleton nil t)
-;;  (setq helm-code-skeleton-dir-path-alist '((php-mode . "$HOME/.emacs.d/elpa/php-mode-*")
-;;                                            (python-mode . "$HOME/.emacs.d/code-skeleton/python")
-;;                                            (lisp-interaction-mode . "$HOME/.emacs.d/code-skeleton/lisp")))
+;;    (require 'skeleton)
+;;    (setq helm-code-skeleton-dir-root-path "~/.emacs.d/code-skeletons")
 ;;    (helm-code-skeleton-load))
 ;;
 ;; ----------------------------------------------------------------
@@ -48,8 +47,8 @@
   "Search code skeleton with helm interface"
   :group 'helm)
 
-(defcustom helm-code-skeleton-dir-path-alist '()
-  "Code directory path"
+(defcustom helm-code-skeleton-dir-root-path nil
+  "Code directory root path"
   :group 'helm-code-skeleton)
 
 (defcustom helm-code-skeleton-exclude-load-regex ".*\\(php-mode.el\\|php-mode-pkg.el\\|php-mode-autoloads.el\\)$"
@@ -92,9 +91,20 @@ are the string substitutions (see `format')."
 (defun helm-code-skeleton--set-candidates-cache (mode candidates)
   (add-to-list 'helm-code-skeleton--candidates-cache `(,mode . ,candidates)))
 
+(defun helm-code-skeleton--get-mode-dir-list ()
+  (let ((cmd (format "ls --ignore '*.md' %s" (file-name-as-directory helm-code-skeleton-dir-root-path)))
+        (result))
+    (dolist (mode-dir (split-string (shell-command-to-string cmd) "\n"))
+      (if (> (length mode-dir) 0)
+          (setq result (cons mode-dir result))))
+    result))
+
+(defun helm-code-skeleton--get-mode-dir-path(mode)
+  (format "%s%s" (file-name-as-directory helm-code-skeleton-dir-root-path) mode))
+
 (defun helm-code-skeleton--construct-command-for-search (mode)
   (let* ((cmd "ls")
-         (dir-path (assoc-default mode helm-code-skeleton-dir-path-alist))
+         (dir-path (helm-code-skeleton--get-mode-dir-path mode))
          (path (concat (file-name-as-directory dir-path) "*.el"))
          (opt "| xargs grep -r 'define-skeleton' | sed -e 's/.*define-skeleton //g'")
          (cmds (list cmd path opt)))
@@ -102,7 +112,7 @@ are the string substitutions (see `format')."
 
 (defun helm-code-skeleton--construct-command-for-load (mode)
   (let* ((cmd "ls")
-         (dir-path (assoc-default mode helm-code-skeleton-dir-path-alist))
+         (dir-path (helm-code-skeleton--get-mode-dir-path mode))
          (path (concat (file-name-as-directory dir-path) "*.el"))
          (cmds (list cmd path)))
     (mapconcat 'identity cmds " ")))
@@ -152,13 +162,12 @@ are the string substitutions (see `format')."
 ;;;###autoload
 (defun helm-code-skeleton-load ()
   (interactive)
-  (unless helm-code-skeleton-dir-path-alist
-    (error "Dose not set 'helm-code-skeleton-dir-path-alist'."))
+  (unless helm-code-skeleton-dir-root-path
+    (error "Dose not set 'helm-code-skeleton-dir-root-path'."))
   (helm-code-skeleton-cache-clear)
-  (dolist (mode-alist helm-code-skeleton-dir-path-alist)
-    (helm-code-skeleton-log 3 "mode: %s" (car mode-alist))
-    (let* ((mode (car mode-alist))
-           (ret (helm-code-skeleton--excecute-command (helm-code-skeleton--construct-command-for-load mode)))
+  (dolist (mode (helm-code-skeleton--get-mode-dir-list))
+    (helm-code-skeleton-log 3 "mode: %s" mode)
+    (let* ((ret (helm-code-skeleton--excecute-command (helm-code-skeleton--construct-command-for-load mode)))
            (file-path-list (split-string ret "\n"))
            (file-path-list (cl-remove-if (lambda (s) (string-match helm-code-skeleton-exclude-load-regex s)) file-path-list)))
       (dolist (file-path file-path-list)
@@ -170,9 +179,9 @@ are the string substitutions (see `format')."
 (defun helm-code-skeleton-search ()
   "Search code skeleton"
   (interactive)
-  (unless helm-code-skeleton-dir-path-alist
-    (error "Dose not set 'helm-code-skeleton-dir-path-alist'."))
-  (unless (assoc-default major-mode helm-code-skeleton-dir-path-alist)
+  (unless helm-code-skeleton-dir-root-path
+    (error "Dose not set 'helm-code-skeleton-dir-root-path'."))
+  (unless (file-directory-p (helm-code-skeleton--get-mode-dir-path major-mode))
     (error (format "Dose not exsist skeleton directory path on '%s'." major-mode)))
   (setq helm-code-skeleton--current-mode major-mode)
   (helm :sources '(helm-source-code-skeleton-search) :buffer helm-code-skeleton--buffer))
